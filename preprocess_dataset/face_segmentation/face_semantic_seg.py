@@ -36,66 +36,6 @@ class FaceSemanticSegmentation:
             parsing = out.squeeze(0).cpu().numpy().argmax(0)
         return parsing
 
-    def save_segmented_parts(self, image_path):
-        # Extract the base name from the image path
-        base_directory = osp.dirname(image_path)
-
-        # Extract the base name (filename without extension) from the image path
-        base_name = osp.splitext(osp.basename(image_path))[0]
-        output_dir = osp.join(base_directory, base_name)
-
-        # Create output directory if it doesn't exist
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Load and preprocess the image
-        image = self._open_image(image_path)
-        
-        # Save the resized image
-        resized_image_path = osp.join(output_dir, f"{base_name}_resized.jpg")
-        image.save(resized_image_path)
-
-        parsing = self._segment(image)
-
-        # Initialize a mask for combined parts
-        combined_mask = np.zeros_like(parsing, dtype=np.uint8)
-        eyes_mask = np.zeros_like(parsing, dtype=np.uint8)
-        lip_mask =  np.zeros_like(parsing, dtype=np.uint8)
-        nose_mask =  np.zeros_like(parsing, dtype=np.uint8)
-
-        for part_id in range(self.n_classes):
-            mask = (parsing == part_id).astype(np.uint8) * 255
-            
-            # Combine masks for all parts except 0, 9, and 17
-            if part_id not in [0, 9, 16, 17]:
-                combined_mask = np.maximum(combined_mask, mask)
-
-            if part_id in [4, 5]:
-                eyes_mask = np.maximum(eyes_mask, mask)
-
-            if part_id in [12, 13]:
-                lip_mask = np.maximum(lip_mask, mask)
-
-            if part_id in [10]:
-                nose_mask = np.maximum(nose_mask, mask)
-
-            # Save individual mask images
-            output_image = Image.fromarray(mask)
-            output_image.save(osp.join(output_dir, f"part_{part_id}.png"))
-
-        # Save the combined mask as well
-        combined_output_image = Image.fromarray(combined_mask)
-        combined_output_image.save(osp.join(output_dir, "combined_mask.png"))
-    
-        eye_output_image = Image.fromarray(eyes_mask)
-        eye_output_image.save(osp.join(output_dir, "eyes_mask.png"))
-
-        lip_output_image = Image.fromarray(lip_mask)
-        lip_output_image.save(osp.join(output_dir, "lip_mask.png"))
-
-        nose_output_image = Image.fromarray(nose_mask)
-        nose_output_image.save(osp.join(output_dir, "nose_mask.png"))
-
-
     def get_segmented_skin(self, image_path):
         img = Image.open(image_path)
         original_size = img.size
