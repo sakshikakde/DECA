@@ -35,6 +35,9 @@ Thumbs.db
 *.dat
 *.npz
 
+# image data
+*.png
+*.npy
 # python file #
 ############
 *.pyc
